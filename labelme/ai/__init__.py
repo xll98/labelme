@@ -2,7 +2,27 @@ import gdown
 
 from .efficient_sam import EfficientSam
 from .segment_anything_model import SegmentAnythingModel
+from .YoloV8Seg import YOLOv8Seg
 
+class MvtSeg_SKU(YOLOv8Seg):
+    name = "MVTSegModel_SKU"
+    def __init__(self):
+        super().__init__(
+            onnx_model=gdown.cached_download(
+                url="https://genius-prod1.oss-cn-hangzhou.aliyuncs.com/PACKAGE/yolov8_seg_paimian_ext1.onnx",  # NOQA
+                md5="cea40d9f739408f7bb53a553314eb50b",
+            ),
+        )
+
+class MvtSeg_One(YOLOv8Seg):
+    name = "MVTSegModel_One"
+    def __init__(self):
+        super().__init__(
+            onnx_model=gdown.cached_download(
+                url="https://genius-prod1.oss-cn-hangzhou.aliyuncs.com/PACKAGE/yolov8_seg_paimian_one.onnx",  # NOQA
+                md5="0f3a86b94af9f5eed7c2177941fd6e71",
+            ),
+        )
 
 class SegmentAnythingModelVitB(SegmentAnythingModel):
     name = "SegmentAnything (speed)"
@@ -90,4 +110,9 @@ MODELS = [
     SegmentAnythingModelVitH,
     EfficientSamVitT,
     EfficientSamVitS,
+]
+
+MVT_MODELS = [
+    MvtSeg_SKU,
+    MvtSeg_One,
 ]

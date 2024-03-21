@@ -8,7 +8,9 @@ import os.path as osp
 import re
 import webbrowser
 
+import cv2
 import imgviz
+import labelme.ai
 import natsort
 from qtpy import QtCore
 from qtpy import QtGui
@@ -17,7 +19,7 @@ from qtpy.QtCore import Qt
 
 from labelme import PY2
 from labelme import __appname__
-from labelme.ai import MODELS
+from labelme.ai import MODELS,MVT_MODELS
 from labelme.config import get_config
 from labelme.label_file import LabelFile
 from labelme.label_file import LabelFileError
@@ -94,7 +96,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._noSelectionSlot = False
 
         self._copied_shapes = None
-
+        self._mvt_ai_model = None
         # Main widgets and related state.
         self.labelDialog = LabelDialog(
             parent=self,
@@ -783,6 +785,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selectAiModelLabel = QtWidgets.QLabel(self.tr("AI Model"))
         selectAiModelLabel.setAlignment(QtCore.Qt.AlignCenter)
         selectAiModel.defaultWidget().layout().addWidget(selectAiModelLabel)
+
         #
         self._selectAiModelComboBox = QtWidgets.QComboBox()
         selectAiModel.defaultWidget().layout().addWidget(self._selectAiModelComboBox)
@@ -805,6 +808,49 @@ class MainWindow(QtWidgets.QMainWindow):
             else None
         )
 
+        selectMvtAiModel = QtWidgets.QWidgetAction(self)
+        selectMvtAiModel.setDefaultWidget(QtWidgets.QWidget())
+        selectMvtAiModel.defaultWidget().setLayout(QtWidgets.QVBoxLayout())
+
+        selectMvtAiModelLabel = QtWidgets.QLabel(self.tr("Mvt AI Model"))
+        selectMvtAiModelLabel.setAlignment(QtCore.Qt.AlignCenter)
+        selectMvtAiModel.defaultWidget().layout().addWidget(selectMvtAiModelLabel)
+
+        #自己添加的combox
+        self._selectMvtAiModelComboBox = QtWidgets.QComboBox()
+        selectMvtAiModel.defaultWidget().layout().addWidget(self._selectMvtAiModelComboBox)
+        mvtmodel_names = [model.name for model in MVT_MODELS]
+        self._selectMvtAiModelComboBox.addItems(mvtmodel_names)
+        if self._config["mvtai"]["default"] in mvtmodel_names:
+            model_index = mvtmodel_names.index(self._config["mvtai"]["default"])
+        else:
+            logger.warning(
+                "Default Mvt AI model is not found: %r",
+                self._config["mvtai"]["default"],
+            )
+            model_index = 0
+        self._selectMvtAiModelComboBox.setCurrentIndex(model_index)
+        self._selectMvtAiModelComboBox.currentIndexChanged.connect(
+            lambda: print(
+                self._selectMvtAiModelComboBox.currentText()
+            )
+        )
+        #添加加载模型按钮
+        UseMvtAiModel = QtWidgets.QWidgetAction(self)
+        UseMvtAiModel.setDefaultWidget(QtWidgets.QWidget())
+        UseMvtAiModel.defaultWidget().setLayout(QtWidgets.QVBoxLayout())
+
+        self._LoadMvtModelButton = QtWidgets.QPushButton(self.tr("加载模型"))
+        self._RunMvtModelButton = QtWidgets.QPushButton(self.tr("计算结果"))
+        #LoadMvtModelButton.setAlignment(QtCore.Qt.AlignCenter)
+        UseMvtAiModel.defaultWidget().layout().addWidget(self._LoadMvtModelButton)
+        UseMvtAiModel.defaultWidget().layout().addWidget(self._RunMvtModelButton)
+        self._LoadMvtModelButton.clicked.connect(
+            lambda : self.load_mvt_model(self._selectMvtAiModelComboBox.currentText())
+        )
+        self._RunMvtModelButton.clicked.connect(
+            lambda: self.RunMyAi()
+        )
         self.tools = self.toolbar("Tools")
         self.actions.tool = (
             open_,
@@ -825,6 +871,10 @@ class MainWindow(QtWidgets.QMainWindow):
             zoom,
             None,
             selectAiModel,
+            None,
+            selectMvtAiModel,
+            None,
+            UseMvtAiModel,
         )
 
         self.statusBar().showMessage(str(self.tr("%s started.")) % __appname__)
@@ -1773,7 +1823,33 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(self.filename)
 
         self._config["keep_prev"] = keep_prev
+    def load_mvt_model(self,name):
+        if name not in [model.name for model in labelme.ai.MVT_MODELS]:
+            raise ValueError("Unsupported ai model: %s" % name)
+        model = [model for model in labelme.ai.MVT_MODELS if model.name == name][0]
 
+        if self._mvt_ai_model is not None and self._mvt_ai_model.name == model.name:
+            logger.debug("AI model is already initialized: %r" % model.name)
+        else:
+            logger.debug("Initializing AI model: %r" % model.name)
+            self._mvt_ai_model = model()
+        print("模型加载成功")
+        print("model:", self._mvt_ai_model)
+    def RunMyAi(self):
+        if self.canvas.pixmap is None:
+            logger.warning("Pixmap is not set yet")
+            return
+        else:
+            img_qt = self.canvas.pixmap.toImage()
+            w, h, d = img_qt.size().width(), img_qt.size().height(), img_qt.depth()
+            conv_img = w*h*d
+            if conv_img == 0:
+                logger.warning("==>Pixmap is not set yet")
+                return
+        image = labelme.utils.image.img_qt_to_mat(self.canvas.pixmap.toImage())
+        #cv2.imshow("11",image)
+        cv2.imwrite("11.jpg",image)
+        print("11111")
     def openFile(self, _value=False):
         if not self.mayContinue():
             return

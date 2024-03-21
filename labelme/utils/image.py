@@ -3,12 +3,12 @@
 
 import base64
 import io
-
+import cv2
 import numpy as np
 import PIL.ExifTags
 import PIL.Image
 import PIL.ImageOps
-
+from PyQt5.QtGui import QPainter, QColor, QFont,QImage
 
 def img_data_to_pil(img_data):
     f = io.BytesIO()
@@ -65,6 +65,18 @@ def img_qt_to_arr(img_qt):
     img_arr = np.frombuffer(bytes_, dtype=np.uint8).reshape((h, w, d // 8))
     return img_arr
 
+def img_qt_to_mat(img_qt):
+    img_arr = img_qt_to_arr(img_qt)
+    if len(img_arr.shape) == 2:  # 单通道灰度图像
+        cv_image = cv2.cvtColor(img_arr, cv2.COLOR_GRAY2BGR)
+    elif len(img_arr.shape) == 3 and img_arr.shape[2] == 3:  # RGB图像
+        cv_image = cv2.cvtColor(img_arr, cv2.COLOR_RGB2BGR)
+    elif len(img_arr.shape) == 3 and img_arr.shape[2] == 4:  # RGBA图像
+        cv_image = cv2.cvtColor(img_arr, cv2.COLOR_RGBA2RGB)
+    else:
+        raise ValueError("不支持的图像格式")
+
+    return cv_image
 
 def apply_exif_orientation(image):
     try:

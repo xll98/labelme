@@ -9,6 +9,8 @@ from labelme import QT5
 from labelme.logger import logger
 from labelme.shape import Shape
 
+from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtGui import QPainter, QColor, QFont,QImage
 # TODO(unknown):
 # - [maybe] Find optimal epsilon value.
 
@@ -715,6 +717,18 @@ class Canvas(QtWidgets.QWidget):
             if (shape.selected or not self._hideBackround) and self.isVisible(shape):
                 shape.fill = shape.selected or shape == self.hShape
                 shape.paint(p)
+                #仅在画框和画分割的时候画标签
+                if shape.shape_type in ["polygon", "rectangle"] and shape.label != None:
+                    #p.setPen(QColor(0, 255, 0))
+                    p.setPen(shape.line_color)
+                    p.setFont(QFont('Decorative', 20))
+                    left_p = min(shape.points, key=lambda point: point.x())
+                    right_p = max(shape.points, key=lambda point: point.x())
+                    center_x = (left_p.x() + right_p.x()) / 2
+                    top_p = min(shape.points, key=lambda point: point.y())
+                    #p.drawText(QPointF(shape.points[0].x(), shape.points[0].y() - 10), shape.label)
+                    p.drawText(QPointF(center_x - 20* len(shape.label)/2, top_p.y() - 10), shape.label)
+
         if self.current:
             self.current.paint(p)
             assert len(self.line.points) == len(self.line.point_labels)

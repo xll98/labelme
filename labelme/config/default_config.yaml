@@ -1,6 +1,6 @@
 auto_save: false
 display_label_popup: true
-store_data: true
+store_data: false
 keep_prev: false
 keep_prev_scale: false
 keep_prev_brightness: false
@@ -32,7 +32,8 @@ shape:
 
 ai:
   default: 'EfficientSam (accuracy)'
-
+mvtai:
+  default: 'MVTSegModel_One'
 # main
 flag_dock:
   show: true
@@ -86,6 +87,8 @@ shortcuts:
   close: Ctrl+W
   open: Ctrl+O
   open_dir: Ctrl+U
+  load_model: null
+  run_myai: Ctrl+Shift+R
   quit: Ctrl+Q
   save: Ctrl+S
   save_as: Ctrl+Shift+S
