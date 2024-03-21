@@ -1,7 +1,6 @@
 <h1 align="center">
   <img src="labelme/icons/icon.png"><br/>labelme
 </h1>
-测试修改
 <h4 align="center">
   Image Polygonal Annotation with Python
 </h4>
